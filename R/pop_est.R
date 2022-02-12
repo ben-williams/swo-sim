@@ -12,8 +12,8 @@ pop_est <- function(lfreq, cpue, lengths, samples = NULL, yrs = NULL){
         sample_n(if(n() > samples) samples else n()) %>%
         mutate(new_samp = n()) -> sexed
 
-      inter %>%
-        filter(!(id %in% sexed$id)) -> unsexed
+      # inter %>%
+      #   filter(!(id %in% sexed$id)) -> unsexed
 
     lfreq %>%
       filter(sex == 3, year >= 2017) %>%

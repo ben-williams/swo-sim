@@ -58,7 +58,3 @@ s120 <- replicate(10, pop_est(lfreq, cpue, lngs, samples = 120), simplify = FALS
 
 
 
-vroom::vroom_write(s20, here::here("test", "s20.csv"))
-
-
-s20 = data.frame(a = 2)

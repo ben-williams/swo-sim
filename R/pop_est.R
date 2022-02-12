@@ -4,10 +4,16 @@ pop_est <- function(lfreq, cpue, lengths, samples = NULL, yrs = NULL){
     lfreq %>%
       filter(sex != 3, year >= 2017) %>%
       uncount(frequency) %>%
+      mutate(id = 1:n()) %>%
       group_by(year, species_code, stratum, hauljoin) %>%
-      mutate(n = n()) %>%
-      sample_n(if(n() > samples) samples else n()) %>%
-      mutate(new_samp = n()) -> sexed
+      mutate(n = n()) -> inter
+
+      inter %>%
+        sample_n(if(n() > samples) samples else n()) %>%
+        mutate(new_samp = n()) -> sexed
+
+      inter %>%
+        filter(!(id %in% sexed$id)) -> unsexed
 
     lfreq %>%
       filter(sex == 3, year >= 2017) %>%
@@ -17,7 +23,6 @@ pop_est <- function(lfreq, cpue, lengths, samples = NULL, yrs = NULL){
       bind_rows(sexed) %>%
       group_by(year, species_code, stratum, hauljoin, sex, length) %>%
       summarise(frequency = n()) %>%
-      filter(year >= 2017) %>%
       group_by(year, species_code, stratum) %>%
       mutate(nhauls = length(unique(hauljoin))) %>%
       group_by(year, species_code, stratum, hauljoin) %>%

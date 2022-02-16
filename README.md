@@ -1,5 +1,8 @@
 ## SWO pseudocode 
 
+The `sims` function is the primary driver, it calls the `pop_est` function and replicates it a user defined number of iterations. 
+The `getout` function manipulates the results as some variants are in list form, then saves them to 
+
 `pop_est(lfreq = length freq file, cpue = cpue file, samples = NULL, yrs = 2017, strata = NULL)`
             
  - `yrs` are the years to be sampled default >= 2017
@@ -34,11 +37,13 @@
  - `strata` is a switch to change the comps to year/strata instead of year change to `TRUE` if desired 
  - `samples` is the desired sample size by length  
 
-1. replicate the `pop_est` function the desired number of iterations
+1. replicates the `pop_est` function the desired number of iterations
 
 
-    `getouts(data = sim output, type = "comp", samples = NULL, save = NULL)`
+`getouts(data = sim output, type = "comp", samples = NULL, save = NULL)`
 
  - `type` is the result type - only implemented if `!is.null(samples)` pulls either the length comp or the  - `removed` fish (aka `.new_unsexed`)
  - `samples` is a flag telling the function to look for a list of results
  - `save` is a flag to either save the file e.g., `save = "s20.csv"` which will be placed in the `output` folder, if left `NULL` results are placed in the global environment
+ 
+1. pulls the replicated (or not) simulations, splits the results out if necessary and saves  

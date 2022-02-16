@@ -4,3 +4,8 @@
 .Ruserdata
 *.csv
 *.html
+!/output/og.csv
+!/output/og_st.csv
+!/output/s120.csv
+!/output/s120_comp.csv
+!/output/s120_removed.csv

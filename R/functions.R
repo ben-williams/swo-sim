@@ -4,7 +4,8 @@ library(here)
 library(purrr)
 
 pop_est <- function(lfreq, cpue, samples = NULL, yrs = 2017, strata = NULL){
-  # year switch
+
+   # year switch
   if(is.null(yrs)) yrs = 0
 
   # complete cases of unique lengths by species and sex (for all years)
@@ -83,6 +84,7 @@ pop_est <- function(lfreq, cpue, samples = NULL, yrs = 2017, strata = NULL){
     group_by(year, species_code, stratum, sex, length) %>%
     summarise(comp = sum(comp) / mean(nhauls)) -> .unk
 
+  # id hauls without lengths
   .cpue %>%
     filter(!is.na(catchjoin), !(hauljoin %in% .lcomp$hauljoin)) -> .no_length
 
@@ -117,7 +119,11 @@ pop_est <- function(lfreq, cpue, samples = NULL, yrs = 2017, strata = NULL){
       mutate(across(tidyr::everything(), ~replace_na(.x, 0))) %>%
       dplyr::select(year, species_code, stratum, length, males = `1`, females = `2`, unsexed = `3`) -> .out
 
-    list(new = .out, removed = .new_unsexed)
+    if(!is.null(samples)){
+      list(new = .out, removed = .new_unsexed)
+      } else {
+        .out
+      }
   } else {
     .temp %>%
       dplyr::select(-stratum) %>%
@@ -133,16 +139,30 @@ pop_est <- function(lfreq, cpue, samples = NULL, yrs = 2017, strata = NULL){
 
 
 sims <- function(iters = 1, lfreq, cpue, strata = NULL, samples = NULL, yrs = 2017){
-  replicate(iters, test(lfreq, cpue, samples, yrs, strata), simplify = FALSE)
+  replicate(iters, pop_est(lfreq, cpue, samples, yrs, strata), simplify = FALSE)
 }
 
-getouts <- function(data, type = "comp"){
+getouts <- function(data, type = "comp", strata = NULL, save = NULL){
+
+  if(!is.null(strata)){
   if(type == "comp" ){
   do.call(mapply, c(list, data, SIMPLIFY = FALSE))$new %>%
-      purrr::map_df(., ~as.data.frame(.x), .id = "sim")
+      purrr::map_df(., ~as.data.frame(.x), .id = "sim") -> .out
   } else {
     do.call(mapply, c(list, data, SIMPLIFY = FALSE))$removed %>%
-      purrr::map_df(., ~as.data.frame(.x), .id = "sim")
+      purrr::map_df(., ~as.data.frame(.x), .id = "sim") -> .out
+  }
+  } else {
+    data  %>%
+      purrr::map_df(., ~as.data.frame(.x), .id = "sim") -> .out
   }
 
+  if(!is.null(save)){
+    vroom::vroom_write(.out, here::here("output", save))
+  } else {
+    .out
+  }
+
+
 }
+

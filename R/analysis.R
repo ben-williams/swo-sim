@@ -7,6 +7,8 @@ library(data.table)
 library(vroom)
 library(here)
 
+source("R/functions.R")
+
 # globals ----
 region = "GOA"
 
@@ -39,22 +41,34 @@ vroom::vroom(here::here("data", "CPUE.csv")) %>%
   left_join(strata) %>%
   dplyr::select(year, species_code, catchjoin, hauljoin, stratum, numcpue, area) -> cpue
 
-# complete cases of unique lengths by species and sex
-lfreq %>%
-  group_by(species_code) %>%
-  distinct(length, year, stratum) %>%
-  expand(length, year, stratum) -> lngs
 
 
 # estimate expanded length comps with full dataset
 # also added the number of hauls and total number of lengths by haul
-og <- pop_est(lfreq, cpue, lngs)
-s20 <- replicate(10, pop_est(lfreq, cpue, lngs, samples = 20), simplify = FALSE)
-s40 <- replicate(10, pop_est(lfreq, cpue, lngs, samples = 40), simplify = FALSE)
-s60 <- replicate(10, pop_est(lfreq, cpue, lngs, samples = 60), simplify = FALSE)
-s80 <- replicate(10, pop_est(lfreq, cpue, lngs, samples = 80), simplify = FALSE)
-s100 <- replicate(10, pop_est(lfreq, cpue, lngs, samples = 100), simplify = FALSE)
-s120 <- replicate(10, pop_est(lfreq, cpue, lngs, samples = 120), simplify = FALSE)
+og <- sims(iters = 1, lfreq, cpue)
+og_st <- pop_est(lfreq, cpue, strata, by_strata = TRUE)
+
+s20 <- sims(iters = 10, lfreq, cpue, strata, samples = 20, by_strata = TRUE)
+s50 <- sims(iters = 10, lfreq, cpue, strata, samples = 50, by_strata = TRUE)
 
 
+og_st %>%
+  # dplyr::filter(species_code == "10110") %>%
+  group_by(year, species_code, length) %>%
+  summarise(males = mean(males),
+            id = "og") -> m
 
+s50 %>%
+  # dplyr::filter(species_code == "10110") %>%
+  group_by(year, species_code, length) %>%
+  summarise(males = mean(males),
+            id = "50") %>%
+  bind_rows(m) %>%
+  pivot_wider(values_from = males, names_from = id) %>%
+  mutate(diff = og - `50`,
+         clr = ifelse(diff < 0, "negative", "positive")) %>%
+  ggplot(aes(year, length, size = diff, color = clr)) +
+  geom_point(alpha = 0.2) +
+  scale_size_area() +
+  facet_wrap(~species_code, scales = "free") +
+  funcr::theme_report()

@@ -159,6 +159,7 @@ getouts <- function(data, type = "comp", samples = NULL, save = NULL){
 
   if(!is.null(save)){
     vroom::vroom_write(.out, here::here("output", save), delim = ",")
+    .out
   } else {
     .out
   }

@@ -1,17 +1,10 @@
 ## SWO pseudocode 
 
-`pop_est` 
-
-    inputs (lfreq = length freq file
-            cpue = cpue file
-            samples = NULL
-            yrs = 2017
-            strata = NULL
-            )
+`pop_est(lfreq = length freq file, cpue = cpue file, samples = NULL, yrs = 2017, strata = NULL)`
             
-`yrs` are the years to be sampled default >= 2017  
-`samples` is the desired sample size by length  
-`strata` is a switch to change the comps to year/strata instead of year change to `TRUE` if desired 
+ - `yrs` are the years to be sampled default >= 2017
+ - `samples` is the desired sample size by length  
+ - `strata` is a switch to change the comps to year/strata instead of year change to `TRUE` if desired 
 
 1. get complete cases of lengths by species, year, and stratum = `lngs`
     a. there is a `strata` switch to include or exclude
@@ -35,29 +28,17 @@
     a. if `strata = NULL` aggregate abundance by year and  output directly to global environment
             
 
-`sims`
+`sims(iters = 1, lfreq = length freq file, cpue = cpue file, strata = NULL, samples = NULL, yrs = 2017)`
 
-    inputs (iters = 1 
-            lfreq = length freq file
-            cpue = cpue file
-            strata = NULL
-            samples = NULL
-            yrs = 2017  
-            )
-`iters` is the number of iterations
-`strata` is a switch to change the comps to year/strata instead of year change to `TRUE` if desired 
-`samples` is the desired sample size by length  
+ - `iters` is the number of iterations
+ - `strata` is a switch to change the comps to year/strata instead of year change to `TRUE` if desired 
+ - `samples` is the desired sample size by length  
 
 1. replicate the `pop_est` function the desired number of iterations
 
-`getouts`
 
-    inputs(data = sim output
-           type = "comp"
-           samples = NULL
-           save = NULL
-          )
+    `getouts(data = sim output, type = "comp", samples = NULL, save = NULL)`
 
-`type` is the result type - only implemented if `!is.null(samples)` pulls either the length comp or the `removed` fish (aka `.new_unsexed`)
-`samples` is a flag telling the function to look for a list of results
-`save` is a flag to either save the file e.g., `save = "s20.csv"` which will be placed in the `output` folder, if left `NULL` results are placed in the global environment
+ - `type` is the result type - only implemented if `!is.null(samples)` pulls either the length comp or the  - `removed` fish (aka `.new_unsexed`)
+ - `samples` is a flag telling the function to look for a list of results
+ - `save` is a flag to either save the file e.g., `save = "s20.csv"` which will be placed in the `output` folder, if left `NULL` results are placed in the global environment

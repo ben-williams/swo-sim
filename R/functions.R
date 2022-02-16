@@ -128,7 +128,7 @@ pop_est <- function(lfreq, cpue, samples = NULL, yrs = 2017, strata = NULL){
     .temp %>%
       dplyr::select(-stratum) %>%
       group_by(year, species_code, length, sex) %>%
-      summarise(abund = sum(sz_pop)) %>%
+      summarise(abund = sum(sz_pop, na.rm = T)) %>%
       pivot_wider(names_from = sex, values_from = abund) %>%
       left_join(lngs, .) %>%
       mutate(across(tidyr::everything(), ~replace_na(.x, 0))) %>%

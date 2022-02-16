@@ -142,9 +142,9 @@ sims <- function(iters = 1, lfreq, cpue, strata = NULL, samples = NULL, yrs = 20
   replicate(iters, pop_est(lfreq, cpue, samples, yrs, strata), simplify = FALSE)
 }
 
-getouts <- function(data, type = "comp", strata = NULL, save = NULL){
+getouts <- function(data, type = "comp", samples = NULL, save = NULL){
 
-  if(!is.null(strata)){
+  if(!is.null(samples)){
   if(type == "comp" ){
   do.call(mapply, c(list, data, SIMPLIFY = FALSE))$new %>%
       purrr::map_df(., ~as.data.frame(.x), .id = "sim") -> .out

@@ -138,32 +138,33 @@ pop_est <- function(lfreq, cpue, samples = NULL, yrs = 2017, strata = NULL){
 }
 
 
-sims <- function(iters = 1, lfreq, cpue, strata = NULL, samples = NULL, yrs = 2017){
-  replicate(iters, pop_est(lfreq, cpue, samples, yrs, strata), simplify = FALSE)
-}
+sims <- function(iters = 1, lfreq, cpue, strata = NULL, samples = NULL,
+                 yrs = 2017,  save = NULL){
 
-getouts <- function(data, type = "comp", samples = NULL, save = NULL){
+  .reps <- replicate(iters, pop_est(lfreq, cpue, samples, yrs, strata), simplify = FALSE)
 
-  if(!is.null(samples)){
-  if(type == "comp" ){
-  do.call(mapply, c(list, data, SIMPLIFY = FALSE))$new %>%
+  if(is.null(samples) & is.null(save)){
+    .reps  %>%
+      purrr::map_df(., ~as.data.frame(.x), .id = "sim")
+  } else if(is.null(samples) & !is.null(save)){
+    .reps  %>%
       purrr::map_df(., ~as.data.frame(.x), .id = "sim") -> .out
-  } else {
-    do.call(mapply, c(list, data, SIMPLIFY = FALSE))$removed %>%
-      purrr::map_df(., ~as.data.frame(.x), .id = "sim") -> .out
-  }
-  } else {
-    data  %>%
-      purrr::map_df(., ~as.data.frame(.x), .id = "sim") -> .out
-  }
-
-  if(!is.null(save)){
     vroom::vroom_write(.out, here::here("output", save), delim = ",")
     .out
+  } else if(!is.null(samples)){
+    do.call(mapply, c(list, .reps, SIMPLIFY = FALSE))$new %>%
+      purrr::map_df(., ~as.data.frame(.x), .id = "sim") -> .new
+    do.call(mapply, c(list, .reps, SIMPLIFY = FALSE))$removed %>%
+      purrr::map_df(., ~as.data.frame(.x), .id = "sim") -> .removed
+
+    vroom::vroom_write(.new, here::here("output", paste0(save, "_comp.csv")), delim = ",")
+    vroom::vroom_write(.removed, here::here("output", paste0(save, "_removed.csv")), delim = ",")
+    .new
   } else {
-    .out
+    stop("huh?")
   }
 
-
 }
+
+
 

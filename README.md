@@ -1,7 +1,6 @@
 ## SWO pseudocode 
 
-The `sims` function is the primary driver, it calls the `pop_est` function and replicates it a user defined number of iterations. 
-The `getout` function manipulates the results as some variants are in list form, then saves them to 
+The `sims` function is the primary driver, it calls the `pop_est` function and replicates it a user defined number of iterations, it then processes the results out of list form and can save the results as a .csv. 
 
 `pop_est(lfreq = length freq file, cpue = cpue file, samples = NULL, yrs = 2017, strata = NULL)`
             
@@ -31,19 +30,45 @@ The `getout` function manipulates the results as some variants are in list form,
     a. if `strata = NULL` aggregate abundance by year and  output directly to global environment
             
 
-`sims(iters = 1, lfreq = length freq file, cpue = cpue file, strata = NULL, samples = NULL, yrs = 2017)`
+`sims(iters = 1, lfreq = length freq file, cpue = cpue file, strata = NULL, samples = NULL, yrs = 2017, save = NULL)`
 
  - `iters` is the number of iterations
  - `strata` is a switch to change the comps to year/strata instead of year change to `TRUE` if desired 
  - `samples` is the desired sample size by length  
+ - `years` is the min year to sample aka `>=`
+ - `save` will save results in the `output` folder, a single file is output if there are no `samples`, otherwise two files are output: a `comps` file and a `removed` file (sexed individuals who are move dto the unsexed population)
 
 1. replicates the `pop_est` function the desired number of iterations
 
 
-`getouts(data = sim output, type = "comp", samples = NULL, save = NULL)`
+`get_data(data = sim output, id, species = NULL, yrs = NULL)`
 
- - `type` is the result type - only implemented if `!is.null(samples)` pulls either the length comp or the  - `removed` fish (aka `.new_unsexed`)
- - `samples` is a flag telling the function to look for a list of results
- - `save` is a flag to either save the file e.g., `save = "s20.csv"` which will be placed in the `output` folder, if left `NULL` results are placed in the global environment
+ - `id` is the name of the data
+ - `species` is a filter 
+ - `yrs ` is a filter
  
-1. pulls the replicated (or not) simulations, splits the results out if necessary and saves  
+1. helper function pulls the simulations, splits the results out calculates confidence intervals 
+
+`plot_comp(base_data = og data, sim_data = reduced sample data, species = NULL, yrs = NULL)`
+
+ - species is a filer
+ - yrs is a filter
+ 
+1. line plot with 95% ci comparing original population-based comps to reduced sample size comps
+
+
+`table_comp(base_data = og data, sim_data = reduced sample data, species = NULL, yrs = NULL)`
+
+ - species is a filer
+ - yrs is a filter
+ 
+1. creates a table of output values, also output the difference and percent difference by year, or by year & stratum
+
+`plot_comp2(base_data, sim_data, species = NULL, yrs = NULL)`
+
+ - species is a filer
+ - yrs is a filter
+ 
+1. density plot to plot the output of `table_comp`
+
+

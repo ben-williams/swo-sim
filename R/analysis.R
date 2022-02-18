@@ -11,7 +11,7 @@ source("R/functions.R")
 
 # globals ----
 region = "GOA"
-
+iters = 10
 # data ----
 
 vroom::vroom(here::here("data", "strata.csv")) %>%
@@ -35,27 +35,37 @@ vroom::vroom(here::here("data", "CPUE.csv")) %>%
   left_join(strata) %>%
   dplyr::select(year, species_code, catchjoin, hauljoin, stratum, numcpue, area) -> cpue
 
-sims(iters = 1, lfreq, cpue, samples = 20)
-
-reps <- replicate(2, pop_est(lfreq, cpue, samples = 20), simplify = FALSE)
 
 # annual abundance by year & species
 og <- sims(iters = 1, lfreq, cpue, save = "og")
-s20 <- sims(iters = 2, lfreq, cpue, samples = 20, strata = NULL, save = "s2")
-s40 <- sims(iters = 20, lfreq, cpue, samples = 40, strata = NULL, save = "s40")
-s60 <- sims(iters = 20, lfreq, cpue, samples = 60, strata = NULL, save = "s60")
-s80 <- sims(iters = 20, lfreq, cpue, samples = 80, strata = NULL, save = "s80")
-s100 <- sims(iters = 20, lfreq, cpue, samples = 100, strata = NULL, save = "s100")
-s120 <- sims(iters = 20, lfreq, cpue, samples = 120, strata = NULL, save = "s120")
-s140 <- sims(iters = 20, lfreq, cpue, samples = 140, strata = NULL, save = "s140")
+s20 <- sims(iters = iters, lfreq, cpue, samples = 20, strata = NULL, save = "s2")
+s40 <- sims(iters = iters, lfreq, cpue, samples = 40, strata = NULL, save = "s40")
+s60 <- sims(iters = iters, lfreq, cpue, samples = 60, strata = NULL, save = "s60")
+s80 <- sims(iters = iters, lfreq, cpue, samples = 80, strata = NULL, save = "s80")
+s100 <- sims(iters = iters, lfreq, cpue, samples = 100, strata = NULL, save = "s100")
+s120 <- sims(iters = iters, lfreq, cpue, samples = 120, strata = NULL, save = "s120")
+s140 <- sims(iters = iters, lfreq, cpue, samples = 140, strata = NULL, save = "s140")
 
 
 # annual abundance by year & strata & species
 og_st <- sims(iters = 1, lfreq, cpue, strata = TRUE, save = "og_st")
-s20_st <- sims(iters = 20, lfreq, cpue, samples = 20, strata = TRUE, save = "s20")
-s40_st <- sims(iters = 20, lfreq, cpue, samples = 40, strata = TRUE, save = "s40")
-s60_st <- sims(iters = 20, lfreq, cpue, samples = 60, strata = TRUE, save = "s60")
-s80_st <- sims(iters = 20, lfreq, cpue, samples = 80, strata = TRUE, save = "s80")
-s100_st <- sims(iters = 20, lfreq, cpue, samples = 100, strata = TRUE, save = "s100")
-s120_st <- sims(iters = 20, lfreq, cpue, samples = 120, strata = TRUE, save = "s120")
-s140_st <- sims(iters = 20, lfreq, cpue, samples = 140, strata = TRUE, save = "s140")
+s20_st <- sims(iters = iters, lfreq, cpue, samples = 20, strata = TRUE, save = "s20_st")
+s40_st <- sims(iters = iters, lfreq, cpue, samples = 40, strata = TRUE, save = "s40_st")
+s60_st <- sims(iters = iters, lfreq, cpue, samples = 60, strata = TRUE, save = "s60_st")
+s80_st <- sims(iters = iters, lfreq, cpue, samples = 80, strata = TRUE, save = "s80_st")
+s100_st <- sims(iters = iters, lfreq, cpue, samples = 100, strata = TRUE, save = "s100_st")
+s120_st <- sims(iters = iters, lfreq, cpue, samples = 120, strata = TRUE, save = "s120_st")
+s140_st <- sims(iters = iters, lfreq, cpue, samples = 140, strata = TRUE, save = "s140_st")
+
+
+# different no. of iterations
+s8020 <- sims(iters = 20, lfreq, cpue, samples = 80, strata = NULL, save = "s8020")
+s8040 <- sims(iters = 40, lfreq, cpue, samples = 80, strata = NULL, save = "s8040")
+s8060 <- sims(iters = 60, lfreq, cpue, samples = 80, strata = NULL, save = "s8060")
+s8080 <- sims(iters = 80, lfreq, cpue, samples = 80, strata = NULL, save = "s8080")
+s80100 <- sims(iters = 100, lfreq, cpue, samples = 80, strata = NULL, save = "s80100")
+s80120 <- sims(iters = 120, lfreq, cpue, samples = 80, strata = NULL, save = "s80120")
+
+
+# more years ----
+s80yr <- sims(iters = 10, lfreq, cpue, samples = 80, strata = NULL, save = "s80yr", yrs = 10)

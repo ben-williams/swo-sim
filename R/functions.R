@@ -189,9 +189,20 @@ sims <- function(iters = 1, lfreq, cpue, strata = NULL, samples = NULL, yrs = 20
 }
 
 
-get_data <- function(data, id, species = NULL, yrs = NULL){
+get_data <- function(data, id, strata = NULL, species = NULL, yrs = NULL){
 
 
+  if(!is.null(strata)){
+    data %>%
+      pivot_longer(cols = c(males, females, unsexed)) %>%
+      group_by(year, species_code, stratum, name, length) %>%
+      summarise(mean = mean(value),
+                se = sd(value) / sqrt(n()),
+                .group = "drop") %>%
+      mutate(lci = mean - se * 1.96,
+             uci = mean + se * 1.96,
+             id = id) -> .data
+  } else {
   data %>%
     pivot_longer(cols = c(males, females, unsexed)) %>%
     group_by(year, species_code, name, length) %>%
@@ -201,6 +212,7 @@ get_data <- function(data, id, species = NULL, yrs = NULL){
     mutate(lci = mean - se * 1.96,
            uci = mean + se * 1.96,
            id = id) -> .data
+  }
 
   if(!is.null(species) & !is.null(yrs)){
     .data %>%
@@ -250,7 +262,7 @@ plot_comp <- function(base_data, sim_data, species = NULL, yrs = NULL){
 }
 
 
-table_comp <- function(base_data, sim_data, species = NULL, yrs = NULL){
+table_comp <- function(base_data, sim_data, strata = NULL, species = NULL, yrs = NULL){
 
   if("stratum" %in% names(base_data) & !("stratum" %in% names(sim_data)) |
      !("stratum" %in% names(base_data)) & "stratum" %in% names(sim_data)){
@@ -260,8 +272,8 @@ table_comp <- function(base_data, sim_data, species = NULL, yrs = NULL){
   id1 = deparse(substitute(base_data))
   id2 = deparse(substitute(sim_data))
 
-  get_data(base_data, id = id1, species, yrs) %>%
-    bind_rows(get_data(sim_data, id = id2, species, yrs)) -> .data
+  get_data(base_data, id = id1, strata, species, yrs) %>%
+    bind_rows(get_data(sim_data, id = id2, strata, species, yrs)) -> .data
 
   id1 = enquo(id1)
   id2 = enquo(id2)

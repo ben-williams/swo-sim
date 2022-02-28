@@ -241,8 +241,8 @@ plot_comp <- function(base_data, sim_data, species = NULL, yrs = NULL){
   id1 = deparse(substitute(base_data))
   id2 = deparse(substitute(sim_data))
 
-  get_data(base_data, id = id1, species, yrs) %>%
-    bind_rows(get_data(sim_data, id = id2, species, yrs)) -> .data
+  get_data(base_data, id = id1, strata=NULL, species, yrs) %>%
+    bind_rows(get_data(sim_data, id = id2, strata=NULL, species, yrs)) -> .data
 
 
   for (var in unique(.data$species_code)) {

@@ -180,7 +180,7 @@ sims <- function(iters = 1, lfreq, cpue, strata = NULL, samples = NULL, yrs = 20
   } else {
     .reps  %>%
       purrr::map_df(., ~as.data.frame(.x), .id = "sim") -> .out
-    vroom::vroom_write(.out, here::here("output", save), delim = ",")
+    vroom::vroom_write(.out, here::here("output", paste0(save, ".csv")), delim = ",")
     .out
 
   }
@@ -311,4 +311,49 @@ plot_comp2 <- function(base_data, sim_data, species = NULL, yrs = NULL){
     geom_density(alpha = 0.3) +
     facet_wrap(species_code~name, scales = "free", dir = "v")
 
+}
+
+ess_global <- function(sim_data, og_data, save){
+  sim_data %>%
+    left_join(og_data,by = c("year" = "year", "length" = "length", "species_code" = "species_code")) %>%
+    select(-unsexed.x,-unsexed.y) %>%
+    group_by(sim.x, year, species_code) %>%
+    mutate(prop_males = males.x/sum(males.x)) %>%
+    mutate(prop_females = females.x/sum(females.x)) %>%
+    group_by(sim.y, year, species_code) %>%
+    mutate(prop_males_og = males.y/sum(males.y)) %>%
+    mutate(prop_females_og = females.y/sum(females.y)) %>%
+    group_by(year, species_code) %>%
+    select(-males.x,-females.x,-sim.y,-males.y,-females.y) %>%
+    rename(sim = sim.x) %>%
+    group_by(sim, year, species_code) %>%
+    mutate(ess_males = sum(prop_males*(1-prop_males))/sum((prop_males-prop_males_og)^2)) %>%
+    mutate(ess_females = sum(prop_females*(1-prop_females))/sum((prop_females-prop_females_og)^2)) %>%
+    select(-prop_males,-prop_females,-prop_males_og,-prop_females_og) %>%
+    distinct(ess_males,ess_females) -> .out
+  vroom::vroom_write(.out, here::here("output", paste0(save,".csv")), delim = ",")
+  .out
+}
+
+ess_strata <- function(sim_data, og_data, save){
+  sim_data %>%
+    left_join(og_data,by = c("year" = "year", "length" = "length", "species_code" = "species_code", "stratum" = "stratum")) %>%
+    select(-unsexed.x,-unsexed.y) %>%
+    group_by(sim.x, year, species_code, stratum) %>%
+    mutate(prop_males = males.x/sum(males.x)) %>%
+    mutate(prop_females = females.x/sum(females.x)) %>%
+    group_by(sim.y, year, species_code, stratum) %>%
+    mutate(prop_males_og = males.y/sum(males.y)) %>%
+    mutate(prop_females_og = females.y/sum(females.y)) %>%
+    group_by(year, species_code, stratum) %>%
+    select(-males.x,-females.x,-males.y,-females.y, -sim.y) %>%
+    rename(sim = sim.x) %>%
+    group_by(sim, year, species_code, stratum) %>%
+    mutate(ess_males = sum(prop_males*(1-prop_males))/sum((prop_males-prop_males_og)^2)) %>%
+    mutate(ess_females = sum(prop_females*(1-prop_females))/sum((prop_females-prop_females_og)^2)) %>%
+    select(-prop_males,-prop_females,-prop_males_og,-prop_females_og) %>%
+    distinct(ess_males,ess_females) %>%
+    filter(!is.na(ess_males) & !is.na(ess_females) & ess_males > 0 & ess_females > 0) -> .out
+  vroom::vroom_write(.out, here::here("output", paste0(save,".csv")), delim = ",")
+  .out
 }

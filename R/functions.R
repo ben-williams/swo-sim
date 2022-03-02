@@ -324,32 +324,40 @@ ess <- function(sim_data, og_data, strata = NULL, save){
     og_data %>%
       group_by(year, species_code, stratum) %>%
       mutate(og_male = males / sum(males),
-             og_female = females / sum(females)) -> og
+             og_female = females / sum(females)) %>%
+      dplyr::filter(og_female > 0 &  og_male > 0) %>%
+      dplyr::select(year, species_code, stratum, length, og_male, og_female) -> og
 
 
     sim_data %>%
       group_by(sim, year, species_code, stratum) %>%
       mutate(prop_m = males / sum(males),
              prop_f = females / sum(females)) %>%
-      distinct(prop_m, prop_f) %>%
+      filter(prop_m > 0 & prop_f > 0) %>%
       left_join(og) %>%
       summarise(ess_female = sum(prop_f * (1 - prop_f)) / sum((prop_f - og_female)^2),
-                ess_male = sum(prop_m * (1 - prop_m)) / sum((prop_m - og_male)^2)) -> .out
+                ess_male = sum(prop_m * (1 - prop_m)) / sum((prop_m - og_male)^2)) %>%
+      drop_na() %>%
+      filter(is.finite(ess_female), is.finite(ess_male)) -> .out
   } else {
 
     og_data %>%
       group_by(year, species_code) %>%
       mutate(og_male = males / sum(males),
              og_female = females / sum(females)) %>%
+      dplyr::filter(og_female > 0 &  og_male > 0) %>%
       dplyr::select(year, species_code, length, og_male, og_female) -> og
 
     sim_data %>%
       group_by(sim, year, species_code) %>%
       mutate(prop_m = males / sum(males),
              prop_f = females / sum(females)) %>%
+      filter(prop_m > 0 & prop_f > 0) %>%
       left_join(og) %>%
       mutate(ess_female = sum(prop_f * (1 - prop_f)) / sum((prop_f - og_female)^2),
-             ess_male = sum(prop_m * (1 - prop_m)) / sum((prop_m - og_male)^2)) -> .out
+             ess_male = sum(prop_m * (1 - prop_m)) / sum((prop_m - og_male)^2)) %>%
+      drop_na() %>%
+      filter(is.finite(ess_female), is.finite(ess_male)) -> .out
 
   }
 

@@ -180,7 +180,7 @@ sims <- function(iters = 1, lfreq, cpue, strata = NULL, samples = NULL, yrs = 20
   } else {
     .reps  %>%
       purrr::map_df(., ~as.data.frame(.x), .id = "sim") -> .out
-    vroom::vroom_write(.out, here::here("output", save), delim = ",")
+    vroom::vroom_write(.out, here::here("output", paste0(save, ".csv")), delim = ",")
     .out
 
   }
@@ -311,4 +311,44 @@ plot_comp2 <- function(base_data, sim_data, species = NULL, yrs = NULL){
     geom_density(alpha = 0.3) +
     facet_wrap(species_code~name, scales = "free", dir = "v")
 
+}
+
+
+ess <- function(sim_data, og_data, strata = NULL, save){
+
+  if(!is.null(strata)){
+    og_data %>%
+      group_by(year, species_code, stratum) %>%
+      mutate(og_male = males / sum(males),
+             og_female = females / sum(females)) -> og
+
+
+    sim_data %>%
+      group_by(sim, year, species_code, stratum) %>%
+      mutate(prop_m = males / sum(males),
+             prop_f = females / sum(females)) %>%
+      distinct(prop_m, prop_f) %>%
+      left_join(og) %>%
+      summarise(ess_female = sum(prop_f * (1 - prop_f)) / sum((prop_f - og_female)^2),
+                ess_male = sum(prop_m * (1 - prop_m)) / sum((prop_m - og_male)^2)) -> .out
+  } else {
+
+    og_data %>%
+      group_by(year, species_code) %>%
+      mutate(og_male = males / sum(males),
+             og_female = females / sum(females)) %>%
+      dplyr::select(year, species_code, length, og_male, og_female) -> og
+
+    sim_data %>%
+      group_by(sim, year, species_code) %>%
+      mutate(prop_m = males / sum(males),
+             prop_f = females / sum(females)) %>%
+      left_join(og) %>%
+      mutate(ess_female = sum(prop_f * (1 - prop_f)) / sum((prop_f - og_female)^2),
+             ess_male = sum(prop_m * (1 - prop_m)) / sum((prop_m - og_male)^2)) -> .out
+
+  }
+
+  vroom::vroom_write(.out, here::here("output", paste0(save,".csv")), delim = ",")
+  .out
 }

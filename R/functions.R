@@ -316,6 +316,10 @@ plot_comp2 <- function(base_data, sim_data, species = NULL, yrs = NULL){
 
 ess <- function(sim_data, og_data, strata = NULL, save){
 
+  if("stratum" %in% names(og_data) & is.null(strata) | "stratum" %in% names(sim_data) & is.null(strata)){
+    stop("check your strata")
+  }
+
   if(!is.null(strata)){
     og_data %>%
       group_by(year, species_code, stratum) %>%

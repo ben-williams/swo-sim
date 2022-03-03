@@ -338,8 +338,10 @@ ess <- function(sim_data, og_data, strata = NULL, save){
       summarise(ess_female = sum(prop_f * (1 - prop_f)) / sum((prop_f - og_female)^2),
                 ess_male = sum(prop_m * (1 - prop_m)) / sum((prop_m - og_male)^2)) %>%
       drop_na() %>%
-      filter(is.finite(ess_female), is.finite(ess_male)) -> .out
-  } else {
+      pivot_longer(cols = c(ess_female, ess_male), names_to = "ess") %>%
+      mutate(in_out = ifelse(is.infinite(value), "out", "in")) -> .out
+
+    } else {
 
     og_data %>%
       group_by(year, species_code) %>%
@@ -357,7 +359,8 @@ ess <- function(sim_data, og_data, strata = NULL, save){
       mutate(ess_female = sum(prop_f * (1 - prop_f)) / sum((prop_f - og_female)^2),
              ess_male = sum(prop_m * (1 - prop_m)) / sum((prop_m - og_male)^2)) %>%
       drop_na() %>%
-      filter(is.finite(ess_female), is.finite(ess_male)) -> .out
+      pivot_longer(cols = c(ess_female, ess_male), names_to = "ess") %>%
+      mutate(in_out = ifelse(is.infinite(value), "out", "in")) -> .out
 
   }
 

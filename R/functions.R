@@ -155,7 +155,7 @@ pop_est <- function(lfreq, cpue, samples = NULL, yrs = 2017, strata = NULL){
 }
 
 
-sims <- function(iters = 1, lfreq, cpue, strata = NULL, samples = NULL, yrs = 2017,  save = NULL){
+sims <- function(iters = 1, lfreq, cpue, strata = NULL, samples = NULL, yrs = 2017,  save = NULL, removed_summ=NULL){
 
   if(!is.null(samples) & is.null(save)){
     stop("you have to save the 'newly unsexed' samples - aka save = 's20'" )
@@ -170,8 +170,16 @@ sims <- function(iters = 1, lfreq, cpue, strata = NULL, samples = NULL, yrs = 20
     do.call(mapply, c(list, .reps, SIMPLIFY = FALSE))$removed %>%
       purrr::map_df(., ~as.data.frame(.x), .id = "sim") -> .removed
 
+    .removed %>%
+      group_by(sim, year, species_code, stratum, hauljoin) %>%
+      summarise(ss_removed = length(id)) -> .removed_summ
+
     vroom::vroom_write(.new, here::here("output", paste0(save, "_comp.csv")), delim = ",")
-    vroom::vroom_write(.removed, here::here("output", paste0(save, "_removed.csv")), delim = ",")
+    if(is.null(removed_summ)){
+      vroom::vroom_write(.removed, here::here("output", paste0(save, "_removed.csv")), delim = ",")
+    } else{
+      vroom::vroom_write(.removed_summ, here::here("output", paste0(save, "_removed_summ.csv")), delim = ",")
+    }
     .new
   } else if(is.null(samples) & is.null(save)){
     .reps  %>%

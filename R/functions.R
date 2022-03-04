@@ -21,7 +21,7 @@ ggplot2::theme_set(
 
 pop_est <- function(lfreq, cpue, samples = NULL, yrs = 2017, strata = NULL){
 
-   # year switch
+  # year switch
   if(is.null(yrs)) yrs = 0
 
   # complete cases of unique lengths by species and sex (for all years)
@@ -155,7 +155,7 @@ pop_est <- function(lfreq, cpue, samples = NULL, yrs = 2017, strata = NULL){
 }
 
 
-sims <- function(iters = 1, lfreq, cpue, strata = NULL, samples = NULL, yrs = 2017,  save = NULL){
+sims <- function(iters = 1, lfreq, cpue, strata = NULL, samples = NULL, yrs = 2017,  save = NULL, removed_summ=NULL){
 
   if(!is.null(samples) & is.null(save)){
     stop("you have to save the 'newly unsexed' samples - aka save = 's20'" )
@@ -170,8 +170,16 @@ sims <- function(iters = 1, lfreq, cpue, strata = NULL, samples = NULL, yrs = 20
     do.call(mapply, c(list, .reps, SIMPLIFY = FALSE))$removed %>%
       purrr::map_df(., ~as.data.frame(.x), .id = "sim") -> .removed
 
+    .removed %>%
+      group_by(sim, year, species_code, stratum, hauljoin) %>%
+      summarise(ss_removed = length(id)) -> .removed_summ
+
     vroom::vroom_write(.new, here::here("output", paste0(save, "_comp.csv")), delim = ",")
-    vroom::vroom_write(.removed, here::here("output", paste0(save, "_removed.csv")), delim = ",")
+    if(is.null(removed_summ)){
+      vroom::vroom_write(.removed, here::here("output", paste0(save, "_removed.csv")), delim = ",")
+    } else{
+      vroom::vroom_write(.removed_summ, here::here("output", paste0(save, "_removed_summ.csv")), delim = ",")
+    }
     .new
   } else if(is.null(samples) & is.null(save)){
     .reps  %>%
@@ -203,15 +211,15 @@ get_data <- function(data, id, strata = NULL, species = NULL, yrs = NULL){
              uci = mean + se * 1.96,
              id = id) -> .data
   } else {
-  data %>%
-    pivot_longer(cols = c(males, females, unsexed)) %>%
-    group_by(year, species_code, name, length) %>%
-    summarise(mean = mean(value),
-              se = sd(value) / sqrt(n()),
-              .group = "drop") %>%
-    mutate(lci = mean - se * 1.96,
-           uci = mean + se * 1.96,
-           id = id) -> .data
+    data %>%
+      pivot_longer(cols = c(males, females, unsexed)) %>%
+      group_by(year, species_code, name, length) %>%
+      summarise(mean = mean(value),
+                se = sd(value) / sqrt(n()),
+                .group = "drop") %>%
+      mutate(lci = mean - se * 1.96,
+             uci = mean + se * 1.96,
+             id = id) -> .data
   }
 
   if(!is.null(species) & !is.null(yrs)){
@@ -248,17 +256,17 @@ plot_comp <- function(base_data, sim_data, species = NULL, yrs = NULL){
   for (var in unique(.data$species_code)) {
 
 
-   print(ggplot(.data[.data$species_code==var,], aes(length, mean, color = id)) +
-             geom_line() +
-             geom_ribbon(aes(ymin = lci, ymax = uci), alpha = 0.2, linetype = 0) +
-             facet_wrap(name~year, scales = "free") +
-             scale_color_manual(values = c(4, 1)) +
-             scale_fill_manual(values = c(4, 1)) +
-             guides(color = guide_legend(override.aes = list(fill=NA))) +
-             ggtitle(paste0("species = ", var))
-   )
+    print(ggplot(.data[.data$species_code==var,], aes(length, mean, color = id)) +
+            geom_line() +
+            geom_ribbon(aes(ymin = lci, ymax = uci), alpha = 0.2, linetype = 0) +
+            facet_wrap(name~year, scales = "free") +
+            scale_color_manual(values = c(4, 1)) +
+            scale_fill_manual(values = c(4, 1)) +
+            guides(color = guide_legend(override.aes = list(fill=NA))) +
+            ggtitle(paste0("species = ", var))
+    )
 
-   }
+  }
 }
 
 
@@ -266,7 +274,7 @@ table_comp <- function(base_data, sim_data, strata = NULL, species = NULL, yrs =
 
   if("stratum" %in% names(base_data) & !("stratum" %in% names(sim_data)) |
      !("stratum" %in% names(base_data)) & "stratum" %in% names(sim_data)){
-  stop("both files need to have stratum or not, can't be mixing them")
+    stop("both files need to have stratum or not, can't be mixing them")
   }
 
   id1 = deparse(substitute(base_data))
@@ -341,7 +349,7 @@ ess <- function(sim_data, og_data, strata = NULL, save){
       pivot_longer(cols = c(ess_female, ess_male), names_to = "ess") %>%
       mutate(in_out = ifelse(is.infinite(value), "out", "in")) -> .out
 
-    } else {
+  } else {
 
     og_data %>%
       group_by(year, species_code) %>%

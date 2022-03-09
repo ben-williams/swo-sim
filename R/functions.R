@@ -112,7 +112,7 @@ pop_est <- function(lfreq, cpue, samples = NULL, yrs = 2017, strata = NULL){
     summarise(abund = mean(numcpue) / tot * st_num) -> .pop
 
   # if there are any samples w/o lengths rejoin them
-  if(nrow(.no_length == 0)){
+  if(nrow(.no_length) == 0){
     .lcomp %>%
       left_join(.pop) %>%
       mutate(sz_pop = round(comp * abund, 0)) -> .temp

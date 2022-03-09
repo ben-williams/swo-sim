@@ -171,8 +171,8 @@ sims <- function(iters = 1, lfreq, cpue, strata = NULL, samples = NULL, yrs = 20
       purrr::map_df(., ~as.data.frame(.x), .id = "sim") -> .removed
 
     .removed %>%
-      group_by(sim, year, species_code, stratum, hauljoin) %>%
-      summarise(ss_removed = length(id)) -> .removed_summ
+      group_by(year, species_code, stratum, hauljoin) %>%
+      summarise(ss_removed = length(id) / iters) -> .removed_summ
 
     vroom::vroom_write(.new, here::here("output", paste0(save, "_comp.csv")), delim = ",")
     if(is.null(removed_summ)){

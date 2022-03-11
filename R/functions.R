@@ -347,7 +347,9 @@ ess <- function(sim_data, og_data, strata = NULL, save){
                 ess_male = sum(prop_m * (1 - prop_m)) / sum((prop_m - og_male)^2)) %>%
       drop_na() %>%
       pivot_longer(cols = c(ess_female, ess_male), names_to = "ess") %>%
-      mutate(in_out = ifelse(is.infinite(value), "out", "in")) -> .out
+      mutate(in_out = ifelse(is.infinite(value), "out", "in")) %>%
+      group_by(sim, year, species_code, stratum, ess, value, in_out) %>%
+      distinct(value) -> .out
 
     } else {
 
@@ -368,7 +370,9 @@ ess <- function(sim_data, og_data, strata = NULL, save){
              ess_male = sum(prop_m * (1 - prop_m)) / sum((prop_m - og_male)^2)) %>%
       drop_na() %>%
       pivot_longer(cols = c(ess_female, ess_male), names_to = "ess") %>%
-      mutate(in_out = ifelse(is.infinite(value), "out", "in")) -> .out
+      mutate(in_out = ifelse(is.infinite(value), "out", "in")) %>%
+      group_by(sim, year, species_code, stratum, ess, value, in_out) %>%
+      distinct(value) -> .out
 
   }
 

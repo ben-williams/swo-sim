@@ -175,7 +175,7 @@ sims <- function(iters = 1, lfreq, cpue, strata = NULL, samples = NULL, yrs = 20
       group_by(year, species_code, stratum, hauljoin) %>%
       summarise(ss_removed = length(id) / iters) -> .removed_summ
 
-    vroom::vroom_write(.new, here::here("output", paste0(save, "_comp.csv")), delim = ",")
+    vroom::vroom_write(.new, here::here("output", paste0(save, "_size.csv")), delim = ",")
     if(is.null(removed_summ)){
       vroom::vroom_write(.removed, here::here("output", paste0(save, "_removed.csv")), delim = ",")
     } else{
@@ -323,7 +323,7 @@ plot_comp2 <- function(base_data, sim_data, species = NULL, yrs = NULL){
 }
 
 
-ess <- function(sim_data, og_data, strata = NULL, save){
+ess_size <- function(sim_data, og_data, strata = NULL, save){
 
   if("stratum" %in% names(og_data) & is.null(strata) | "stratum" %in% names(sim_data) & is.null(strata)){
     stop("check your strata")
@@ -332,51 +332,259 @@ ess <- function(sim_data, og_data, strata = NULL, save){
   if(!is.null(strata)){
     og_data %>%
       group_by(year, species_code, stratum) %>%
-      mutate(og_male = males / sum(males),
-             og_female = females / sum(females)) %>%
-      dplyr::filter(og_female >= 0 &  og_male >= 0) %>%
-      dplyr::select(year, species_code, stratum, length, og_male, og_female) -> og
+      mutate(og_m = males / sum(males),
+             og_f = females / sum(females),
+             og_t = (males + females + unsexed)/(sum(males) + sum(females) + sum(unsexed))) %>%
+      dplyr::filter(og_f >= 0 &  og_m >= 0 & og_t >=0) %>%
+      dplyr::select(year, species_code, stratum, length, og_m, og_f, og_t) -> og_prop
 
 
     sim_data %>%
       group_by(sim, year, species_code, stratum) %>%
       mutate(prop_m = males / sum(males),
-             prop_f = females / sum(females)) %>%
-      filter(prop_m >= 0 & prop_f >= 0) %>%
-      left_join(og) %>%
-      summarise(ess_female = sum(prop_f * (1 - prop_f)) / sum((prop_f - og_female)^2),
-                ess_male = sum(prop_m * (1 - prop_m)) / sum((prop_m - og_male)^2)) %>%
+             prop_f = females / sum(females),
+             prop_t = (males + females + unsexed)/(sum(males) + sum(females) + sum(unsexed))) %>%
+      filter(prop_m >= 0 & prop_f >= 0 & prop_t >= 0) %>%
+      left_join(og_prop) %>%
+      summarise(ess_f = sum(prop_f * (1 - prop_f)) / sum((prop_f - og_f)^2),
+                ess_m = sum(prop_m * (1 - prop_m)) / sum((prop_m - og_m)^2),
+                ess_t = sum(prop_t * (1 - prop_t)) / sum((prop_t - og_t)^2)) %>%
       drop_na() %>%
-      pivot_longer(cols = c(ess_female, ess_male), names_to = "ess") %>%
+      pivot_longer(cols = c(ess_f, ess_m, ess_t), names_to = "ess") %>%
       mutate(in_out = ifelse(is.infinite(value), "out", "in")) %>%
       group_by(sim, year, species_code, stratum, ess, value, in_out) %>%
       distinct(value) -> .out
 
-    } else {
+  } else {
 
     og_data %>%
       group_by(year, species_code) %>%
-      mutate(og_male = males / sum(males),
-             og_female = females / sum(females)) %>%
-      dplyr::filter(og_female >= 0 &  og_male >= 0) %>%
-      dplyr::select(year, species_code, length, og_male, og_female) -> og
+      mutate(og_m = males / sum(males),
+             og_f = females / sum(females),
+             og_t = (males + females + unsexed)/(sum(males) + sum(females) + sum(unsexed))) %>%
+      dplyr::filter(og_f >= 0 &  og_m >= 0 & og_t >=0) %>%
+      dplyr::select(year, species_code, length, og_m, og_f, og_t) -> og_prop
 
     sim_data %>%
       group_by(sim, year, species_code) %>%
       mutate(prop_m = males / sum(males),
-             prop_f = females / sum(females)) %>%
-      filter(prop_m >= 0 & prop_f >= 0) %>%
-      left_join(og) %>%
-      mutate(ess_female = sum(prop_f * (1 - prop_f)) / sum((prop_f - og_female)^2),
-             ess_male = sum(prop_m * (1 - prop_m)) / sum((prop_m - og_male)^2)) %>%
+             prop_f = females / sum(females),
+             prop_t = (males + females + unsexed)/(sum(males) + sum(females) + sum(unsexed))) %>%
+      filter(prop_m >= 0 & prop_f >= 0 & prop_t >= 0) %>%
+      left_join(og_prop) %>%
+      mutate(ess_f = sum(prop_f * (1 - prop_f)) / sum((prop_f - og_f)^2),
+             ess_m = sum(prop_m * (1 - prop_m)) / sum((prop_m - og_m)^2),
+             ess_t = sum(prop_t * (1 - prop_t)) / sum((prop_t - og_t)^2)) %>%
       drop_na() %>%
-      pivot_longer(cols = c(ess_female, ess_male), names_to = "ess") %>%
+      pivot_longer(cols = c(ess_f, ess_m, ess_t), names_to = "ess") %>%
       mutate(in_out = ifelse(is.infinite(value), "out", "in")) %>%
-      group_by(sim, year, species_code, stratum, ess, value, in_out) %>%
+      group_by(sim, year, species_code, ess, value, in_out) %>%
       distinct(value) -> .out
 
   }
 
   vroom::vroom_write(.out, here::here("output", paste0(save,".csv")), delim = ",")
   .out
+}
+
+ess_age <- function(sim_data, og_data, save){
+
+  og_data %>%
+    group_by(year, species_code) %>%
+    mutate(og_m = males / sum(males),
+           og_f = females / sum(females),
+           og_t = (males + females + unsexed)/(sum(males) + sum(females) + sum(unsexed))) %>%
+    dplyr::select(year, species_code, age, og_m, og_f, og_t) -> og_prop
+
+  sim_data %>%
+    group_by(sim, year, species_code) %>%
+    mutate(prop_m = males / sum(males),
+           prop_f = females / sum(females),
+           prop_t = (males + females + unsexed)/(sum(males) + sum(females) + sum(unsexed))) %>%
+    left_join(og_prop) %>%
+    mutate(ess_f = sum(prop_f * (1 - prop_f)) / sum((prop_f - og_f)^2),
+           ess_m = sum(prop_m * (1 - prop_m)) / sum((prop_m - og_m)^2),
+           ess_t = sum(prop_t * (1 - prop_t)) / sum((prop_t - og_t)^2)) %>%
+    pivot_longer(cols = c(ess_f, ess_m, ess_t), names_to = "ess") %>%
+    group_by(sim, year, species_code, ess, value) %>%
+    distinct(value) -> .out
+
+  vroom::vroom_write(.out, here::here("output", paste0(save,".csv")), delim = ",")
+  .out
+}
+
+prop_fm <- function(sim_data, og_data, strata = NULL, save){
+
+  if("stratum" %in% names(og_data) & is.null(strata) | "stratum" %in% names(sim_data) & is.null(strata)){
+    stop("check your strata")
+  }
+
+  if(!is.null(strata)){
+
+    sim_data %>%
+      group_by(sim, year, species_code, stratum) %>%
+      mutate(prop_fm = sum(females)/sum(males)) %>%
+      group_by(sim, year, species_code, stratum, prop_fm) %>%
+      distinct(prop_fm) -> sim_st_prop
+
+    og_data %>%
+      group_by(year, species_code, stratum) %>%
+      mutate(prop_fm_og = sum(females)/sum(males)) %>%
+      group_by(year, species_code, stratum, prop_fm_og) %>%
+      distinct(prop_fm_og) -> og_st_prop
+
+    sim_st_prop %>%
+      left_join(og_st_prop) %>%
+      dplyr::filter(prop_fm >= 0 &  prop_fm_og >= 0) -> .out
+
+  } else {
+
+    sim_data %>%
+      group_by(sim, year, species_code) %>%
+      mutate(prop_fm = sum(females)/sum(males)) %>%
+      group_by(sim, year, species_code, prop_fm) %>%
+      distinct(prop_fm) -> sim_prop
+
+    og_data %>%
+      group_by(year, species_code) %>%
+      mutate(prop_fm_og = sum(females)/sum(males)) %>%
+      group_by(year, species_code, prop_fm_og) %>%
+      distinct(prop_fm_og) -> og_prop
+
+    sim_prop %>%
+      left_join(og_prop) %>%
+      dplyr::filter(prop_fm >= 0 &  prop_fm_og >= 0) -> .out
+
+  }
+
+  vroom::vroom_write(.out, here::here("output", paste0(save,".csv")), delim = ",")
+  .out
+
+}
+
+age_pop_est <- function(specimen, sizepop, yrs = 2017, sim = NULL,  save = NULL){
+
+  if(is.null(sim)){
+
+    # filter specimen data to year
+    specimen %>%
+      group_by(species_code) %>%
+      filter(year >= yrs) -> agdat
+
+    # reformat size pop'n data
+    sizepop %>%
+      pivot_longer(cols = c(males, females, unsexed), names_to = "sex") %>%
+      mutate(sex = replace(sex, sex == 'males', 1),
+             sex = replace(sex, sex == 'females', 2),
+             sex = replace(sex, sex == 'unsexed', 3)) %>%
+      mutate(sex = as.numeric(sex)) %>%
+      rename(sizepop = value) -> sizepop_long
+
+    # compute resampled age pop'n for females & males
+    agdat %>%
+      group_by(year, species_code, sex, length, age) %>%
+      summarise(age_num = length(age)) %>%
+      group_by(year, species_code, sex, length) %>%
+      mutate(age_frac = age_num/sum(age_num)) %>%
+      left_join(sizepop_long) %>%
+      mutate(agepop = age_frac * sizepop) %>%
+      group_by(year, species_code, sex, age) %>%
+      mutate(agepop = sum(agepop)) %>%
+      select(year, species_code, sex, age, agepop) %>%
+      group_by(year, species_code, sex, age, agepop) %>%
+      distinct(age) %>%
+      filter(sex <= 2) -> agepop_mf
+
+    # compute resampled age pop'n for unsexed (og rule is if you have a year with unsexed specimen data you use all the specimen data)
+    agdat %>%
+      group_by(year, species_code) %>%
+      count(sex) %>%
+      filter(sex == 3) %>%
+      select(year, species_code, n) -> sex_cnt
+
+    sizepop_long %>%
+      filter(sex == 3) -> sizepop_long_un
+
+    agdat %>%
+      left_join(sex_cnt) %>%
+      filter(n > 0) %>%
+      group_by(year, species_code, length, age) %>%
+      summarise(age_num = length(age)) %>%
+      group_by(year, species_code, length) %>%
+      mutate(age_frac = age_num/sum(age_num)) %>%
+      left_join(sizepop_long_un) %>%
+      mutate(agepop = age_frac * sizepop) %>%
+      group_by(year, species_code, age) %>%
+      mutate(agepop = sum(agepop)) %>%
+      select(year, species_code, sex, age, agepop) %>%
+      group_by(year, species_code, sex, age, agepop) %>%
+      distinct(age) %>%
+      bind_rows(agepop_mf) %>%
+      pivot_wider(names_from = sex, values_from = agepop, values_fill = 0) %>%
+      rename(unsexed = '3', males = '1', females = '2') -> agepop
+
+  } else{
+
+    # filter specimen data to year
+    specimen %>%
+      group_by(species_code) %>%
+      filter(year >= yrs) -> agdat
+
+    # reformat size pop'n data
+    sizepop %>%
+      pivot_longer(cols = c(males, females, unsexed), names_to = "sex") %>%
+      mutate(sex = replace(sex, sex == 'males', 1),
+             sex = replace(sex, sex == 'females', 2),
+             sex = replace(sex, sex == 'unsexed', 3)) %>%
+      mutate(sex = as.numeric(sex)) %>%
+      rename(sizepop = value) -> sizepop_long
+
+    # compute resampled age pop'n for females & males
+    agdat %>%
+      group_by(year, species_code, sex, length, age) %>%
+      summarise(age_num = length(age)) %>%
+      group_by(year, species_code, sex, length) %>%
+      mutate(age_frac = age_num/sum(age_num)) %>%
+      left_join(sizepop_long) %>%
+      mutate(agepop = age_frac * sizepop) %>%
+      group_by(year, species_code, sex, sim, age) %>%
+      mutate(agepop = sum(agepop)) %>%
+      select(year, species_code, sex, age, sim, agepop) %>%
+      group_by(year, species_code, sex, age, sim, agepop) %>%
+      distinct(age) %>%
+      filter(sex <= 2) -> agepop_mf
+
+    # compute resampled age pop'n for unsexed (og rule is if you have a year with unsexed specimen data you use all the specimen data)
+    agdat %>%
+      group_by(year, species_code) %>%
+      count(sex) %>%
+      filter(sex == 3) %>%
+      select(year, species_code, n) -> sex_cnt
+
+    sizepop_long %>%
+      filter(sex == 3) -> sizepop_long_un
+
+    agdat %>%
+      left_join(sex_cnt) %>%
+      filter(n > 0) %>%
+      group_by(year, species_code, length, age) %>%
+      summarise(age_num = length(age)) %>%
+      group_by(year, species_code, length) %>%
+      mutate(age_frac = age_num/sum(age_num)) %>%
+      left_join(sizepop_long_un) %>%
+      mutate(agepop = age_frac * sizepop) %>%
+      group_by(year, species_code, age, sim) %>%
+      mutate(agepop = sum(agepop)) %>%
+      select(year, species_code, sex, age, sim, agepop) %>%
+      group_by(year, species_code, sex, age, sim, agepop) %>%
+      distinct(age) %>%
+      bind_rows(agepop_mf) %>%
+      pivot_wider(names_from = sex, values_from = agepop, values_fill = 0) %>%
+      rename(unsexed = '3', males = '1', females = '2') -> agepop
+
+  }
+
+  vroom::vroom_write(agepop, here::here("output", paste0(save, ".csv")), delim = ",")
+
+  agepop
 }

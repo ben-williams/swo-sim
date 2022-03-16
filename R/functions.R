@@ -130,10 +130,10 @@ pop_est <- function(lfreq, cpue, samples = NULL, yrs = 2017, strata = NULL){
   if(!is.null(strata)){
     .temp %>%
       group_by(year, species_code, stratum, length, sex) %>%
-      summarise(abund = sum(sz_pop), na.rm = T) %>%
+      summarise(abund = sum(sz_pop, na.rm = T)) %>%
       pivot_wider(names_from = sex, values_from = abund) %>%
       left_join(lngs, .) %>%
-      mutate(across(tidyr::everything(), ~replace_na(.x, 0))) %>%
+      mutate(across(.cols = c(`1`, `2`, `3`), ~replace_na(.x, 0))) %>%
       dplyr::select(year, species_code, stratum, length, males = `1`, females = `2`, unsexed = `3`) -> .out
 
   } else {
@@ -143,7 +143,7 @@ pop_est <- function(lfreq, cpue, samples = NULL, yrs = 2017, strata = NULL){
       summarise(abund = sum(sz_pop, na.rm = T)) %>%
       pivot_wider(names_from = sex, values_from = abund) %>%
       left_join(lngs, .) %>%
-      mutate(across(tidyr::everything(), ~replace_na(.x, 0))) %>%
+      mutate(across(.cols = c(`1`, `2`, `3`), ~replace_na(.x, 0))) %>%
       dplyr::select(year, species_code, length, males = `1`, females = `2`, unsexed = `3`) -> .out
   }
 

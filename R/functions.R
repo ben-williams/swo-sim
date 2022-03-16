@@ -75,7 +75,8 @@ pop_est <- function(lfreq, cpue, samples = NULL, yrs = 2017, strata = NULL){
 
     # find new unsexed, that were previously sexed
     .inter %>%
-      anti_join(.new_sexed) -> .new_unsexed
+      anti_join(.new_sexed) %>%
+      mutate(sex = 3) -> .new_unsexed
 
     # rejoin original unsexed to the new_sexed samples
     .lfreq %>%
@@ -83,7 +84,7 @@ pop_est <- function(lfreq, cpue, samples = NULL, yrs = 2017, strata = NULL){
       uncount(frequency) %>%
       group_by(year, species_code, stratum, hauljoin) %>%
       mutate(n = n())  %>%
-      bind_rows(.new_sexed) %>%
+      bind_rows(.new_sexed, .new_unsexed) %>%
       group_by(year, species_code, stratum, hauljoin, sex, length) %>%
       summarise(frequency = n()) %>%
       group_by(year, species_code, stratum) %>%

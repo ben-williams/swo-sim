@@ -245,7 +245,7 @@ ess_size <- function(sim_data, og_data, strata = NULL) {
 }
 sims_boot <- function(lfreq, cpue, samples = NULL, yrs = NULL, strata = NULL, og_data, boot = 500){
 
-  rerun(boot, pop_est_boot(lfreq, cpue, samples = samples, yrs = 2006)) %>%
+  rerun(boot, pop_est_boot(lfreq, cpue, samples = samples, yrs = yrs)) %>%
     map.(., ~ess_size(sim_data = .x, og_data = og_data)) %>%
     map_df.(., ~as.data.frame(.x), .id = "sim")
 

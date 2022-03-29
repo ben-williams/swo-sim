@@ -203,9 +203,9 @@ pop_est_boot <- function(lfreq, cpue, samples = 10000, yrs = NULL, strata = NULL
   # bootstrap the hauls and the lengths
   setDT(lfreq) %>%
     filter.(year >= yrs) %>%
-    uncount.(., frequency) %>%
     .[, hauljoin := hauljoin[sample.int(.N, .N, replace = TRUE)],
       by = c('year', 'species_code', 'stratum') ] %>%
+     uncount.(., frequency) %>%
     .[, length := length[sample.int(.N, .N, replace = TRUE)],
       by = c('year', 'species_code', 'stratum', 'hauljoin') ] -> .lfreq
 

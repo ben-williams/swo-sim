@@ -54,7 +54,125 @@ vroom::vroom(here::here("data", "specimen.csv")) %>%
   dplyr::select(year, species_code, stratum, hauljoin, sex, length, age) %>%
   dplyr::filter(!is.na(age)) -> specimen
 
-
+  pop_est <- function(lfreq, cpue, samples = 10000, yrs = NULL, strata = NULL){
+    
+    # year switch
+    if (is.null(yrs)) yrs <- 0
+    
+    # complete cases of unique lengths by species and sex (for all years)
+    
+    lfreq %>%
+      group_by(species_code) %>%
+      distinct(length, year, stratum) %>%
+      expand(length, year, stratum) %>%
+      filter(year >= yrs) -> lngs
+    
+    # if no strata remove from
+    if (is.null(strata)) {
+      lngs %>%
+        dplyr::select(-stratum) %>%
+        group_by(species_code) %>%
+        distinct(length, year) %>%
+        expand(length, year) -> lngs
+    }
+    
+    # first pass of filtering
+    setDT(cpue) %>%
+      filter.(year >= yrs) -> .cpue
+    
+    setDT(lfreq) %>%
+      filter.(year >= yrs) %>% 
+      uncount.(., frequency) -> .lfreq
+    
+    # pull out males and females, make single row for each, add an id
+    
+    .lfreq %>% 
+      filter.(sex != 3) %>% 
+      mutate.(id = .I) %>% 
+      mutate.(n = .N, .by = c(year, species_code, stratum, hauljoin)) -> .inter
+    
+    # sample by sample size 
+    .inter %>%
+      group_by(year, species_code, stratum, hauljoin) %>%
+      sample_n(if(n > samples) samples else n) -> .new_sexed 
+    
+    # find new unsexed, that were previously sexed
+    .inter %>%
+      anti_join.(.new_sexed, by = "id") %>%
+      mutate.(sex = 3) %>% 
+      count.(c(year, species_code, stratum, hauljoin,   sex, length), name = "frequency") -> .new_unsexed
+    
+    # rejoin original unsexed to the new_sexed samples
+    .lfreq %>% 
+      filter.(sex == 3) %>% 
+      mutate.(id = .I,
+              n = .N, .by = c(year, species_code, stratum, hauljoin))  %>% 
+      bind_rows.(.new_sexed, .new_unsexed) %>% 
+      summarise.(frequency = .N, 
+                 .by = c(year, species_code, stratum, hauljoin, sex, length))  %>% 
+      mutate.(nhauls = uniqueN(hauljoin), 
+              .by = c(year, species_code, stratum)) %>% 
+      mutate.(tot := sum(frequency), 
+              .by = c(year, species_code, stratum, hauljoin)) %>% 
+      summarise.(comp = sum(frequency) / mean(tot),
+                 nhauls = mean(nhauls), 
+                 .by = c(year, species_code, stratum, hauljoin, sex, length))  -> .lcomp
+    
+    
+    # estimate for hauls w/o length samples
+    .lcomp %>%
+      summarise.(comp = sum(comp) / mean(nhauls), .by = c(year, species_code, stratum, sex, length)) -> .unk
+    
+    # id hauls without lengths
+    .cpue %>%
+      filter.(!is.na(catchjoin), !(hauljoin %in% .lcomp$hauljoin)) -> .no_length
+    
+    .cpue %>% 
+      mutate.(st_num = mean(numcpue) * area,
+              tot = sum(numcpue), .by = c(year, species_code, stratum)) %>% 
+      summarise.(abund = mean(numcpue) / tot * st_num, 
+                 .by = c(year, species_code, stratum, hauljoin)) -> .pop
+    
+    # if there are any samples w/o lengths rejoin them
+    if(nrow(.no_length) == 0){
+      .lcomp %>%
+        left_join.(.pop) %>%
+        mutate.(sz_pop = round(comp * abund, 0)) -> .temp
+    } else {
+      .no_length %>%
+        left_join.(.unk) %>%
+        select.(year, species_code, stratum, hauljoin, sex, length, comp) %>%
+        bind_rows.(.lcomp) %>%
+        left_join.(.pop) %>%
+        mutate.(sz_pop = round(comp * abund, 0)) -> .temp
+    }
+    
+    if(!is.null(strata)){
+      .temp %>%
+        summarise.(abund = sum(sz_pop, na.rm = T), .by = c(year, species_code, stratum, length, sex)) %>%
+        pivot_wider.(names_from = sex, values_from = abund) %>%
+        left_join.(lngs, .) %>%
+        mutate.(across.(.cols = c(`1`, `2`, `3`), ~replace_na.(.x, 0))) %>%
+        select.(year, species_code, stratum, length, males = `1`, females = `2`, unsexed = `3`) -> .out
+      
+    } else {
+      .temp %>%
+        select.(-stratum) %>% 
+        summarise.(abund = sum(sz_pop, na.rm = T), .by = c(year, species_code, length, sex)) %>%
+        pivot_wider.(names_from = sex, values_from = abund) %>%
+        left_join.(lngs, .) %>%
+        mutate.(across.(.cols = c(`1`, `2`, `3`), ~replace_na.(.x, 0))) %>%
+        select.(year, species_code, length, males = `1`, females = `2`, unsexed = `3`) -> .out
+    }
+    
+    if(!is.null(samples)){
+      # list(new = .out, removed = .new_unsexed)
+      .out
+    } else {
+      .out
+    }
+    
+  }
 pop_est_boot <- function(lfreq, cpue, samples = 10000, yrs = NULL, strata = NULL){
 
   # updated pop estimate with haul/length bootstraps (w/resampling)

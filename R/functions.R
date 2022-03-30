@@ -5,21 +5,6 @@ library(here)
 library(purrr)
 library(rsample)
 library(data.table)
-ggplot2::theme_set(
-  ggplot2::theme_light() +
-    ggplot2::theme(
-      panel.grid.major = ggplot2::element_blank(),
-      panel.grid.minor = ggplot2::element_blank(),
-      # axis.ticks.length = grid::unit(base_ / 2.2, "pt"),
-      strip.background = ggplot2::element_rect(fill = NA, colour = NA),
-      strip.text.x = element_text(colour = "black"),
-      strip.text.y = element_text(colour = "black"),
-      panel.border = element_rect(fill = NA),
-      legend.key.size = grid::unit(0.9, "lines"),
-      legend.key = ggplot2::element_rect(colour = NA, fill = NA),
-      legend.background = ggplot2::element_rect(colour = NA, fill = NA)
-    )
-)
 
 ############################################################################################################
 # Function to estimate pop'n at size

@@ -40,13 +40,6 @@ ai %>%
   geom_boxplot(fill=4, alpha = 0.3) +
   facet_wrap(species_code~ess, scales = "free_y", ncol = 2)
 
-# same fig but violin plot
-ai %>%
-  filter(ess!= "ess_t", species_code %in% c(21921, 10110, 21720)) %>%
-  ggplot(aes(type, 1/value)) +
-  geom_violin(draw_quantiles = 0.5, fill=4, alpha = 0.3) +
-  facet_wrap(species_code~ess, scales = "free_y", ncol = 2)
-
 # same fig but toggle by sample size and year
 ai %>%
   filter(ess!= "ess_t", species_code %in% c(21921, 10110, 21720)) %>%

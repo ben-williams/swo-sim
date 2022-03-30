@@ -42,3 +42,4 @@ collate4plot <- function (s40, s60, s80, s100, s120, s140, base){
   dat
 }
 
+# plots here

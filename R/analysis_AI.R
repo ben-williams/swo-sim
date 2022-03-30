@@ -53,13 +53,13 @@ rerun(1, size_pop_est(lfreq, cpue, samples = 10000, yrs = 2018)) %>%
   map_df.(., ~as.data.frame(.x), .id = "sim")  -> og_size
 vroom::vroom_write(og_size, here::here("output", "bootstrap", region, "og_size.csv"), delim = ",")
 
-base <- size_sims_boot(lfreq, cpue, samples = 10000, yrs = 2018, strata = NULL, og_data = og_size, boot = boot, write_comp = TRUE, save = "base", region = tolower(region))
-s40 <- size_sims_boot(lfreq, cpue, samples = 40, yrs = 2018, strata = NULL, og_data = og_size, boot = boot, write_comp = TRUE, save = "s40", region = tolower(region))
-s60 <- size_sims_boot(lfreq, cpue, samples = 60, yrs = 2018, strata = NULL, og_data = og_size, boot = boot, write_comp = TRUE, save = "s60", region = tolower(region))
-s80 <- size_sims_boot(lfreq, cpue, samples = 80, yrs = 2018, strata = NULL, og_data = og_size, boot = boot, write_comp = TRUE, save = "s80", region = tolower(region))
-s100 <- size_sims_boot(lfreq, cpue, samples = 100, yrs = 2018, strata = NULL, og_data = og_size, boot = boot, write_comp = TRUE, save = "s100", region = tolower(region))
-s120 <- size_sims_boot(lfreq, cpue, samples = 120, yrs = 2018, strata = NULL, og_data = og_size, boot = boot, write_comp = TRUE, save = "s120", region = tolower(region))
-s140 <- size_sims_boot(lfreq, cpue, samples = 140, yrs = 2018, strata = NULL, og_data = og_size, boot = boot, write_comp = TRUE, save = "s140", region = tolower(region))
+base <- size_sims_boot(lfreq, cpue, samples = 10000, yrs = 2018, strata = NULL, og_data = og_size, boot = boot, write_comp = NULL, save = "base", region = tolower(region))
+s40 <- size_sims_boot(lfreq, cpue, samples = 40, yrs = 2018, strata = NULL, og_data = og_size, boot = boot, write_comp = NULL, save = "s40", region = tolower(region))
+s60 <- size_sims_boot(lfreq, cpue, samples = 60, yrs = 2018, strata = NULL, og_data = og_size, boot = boot, write_comp = NULL, save = "s60", region = tolower(region))
+s80 <- size_sims_boot(lfreq, cpue, samples = 80, yrs = 2018, strata = NULL, og_data = og_size, boot = boot, write_comp = NULL, save = "s80", region = tolower(region))
+s100 <- size_sims_boot(lfreq, cpue, samples = 100, yrs = 2018, strata = NULL, og_data = og_size, boot = boot, write_comp = NULL, save = "s100", region = tolower(region))
+s120 <- size_sims_boot(lfreq, cpue, samples = 120, yrs = 2018, strata = NULL, og_data = og_size, boot = boot, write_comp = NULL, save = "s120", region = tolower(region))
+s140 <- size_sims_boot(lfreq, cpue, samples = 140, yrs = 2018, strata = NULL, og_data = og_size, boot = boot, write_comp = NULL, save = "s140", region = tolower(region))
 
 
 ###############################################################################################################

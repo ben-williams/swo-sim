@@ -260,8 +260,19 @@ age_pop_est <- function(specimen, sizepop, yrs = 2017, sim = NULL,  save = NULL)
 ############################################################################################################
 # Function to run bootstrap simulations
 size_sims_boot <- function(lfreq, cpue, samples = NULL, yrs = NULL, strata = NULL, og_data, boot = 500, write_comp = NULL, save = NULL, region = NULL){
-
-  boot_res <- rerun(boot, size_pop_est_boot(lfreq, cpue, samples = samples, yrs = yrs))
+  
+   if(!is.null(region)){
+    region = tolower(region)
+    if(!isTRUE(dir.exists(here::here("output", region)))){
+       dir.create(here::here("output", region), recursive = TRUE)
+      }
+    }
+  
+  if(!is.null(save) & is.null(region)){
+    stop("need a region folder to save to")
+    }
+  
+  boot_res <- rerun(boot, size_pop_est_boot(lfreq, cpue, samples = samples, yrs = yrs, strata = strata))
 
   if(!is.null(write_comp) & boot>=100){
     boot_res %>%
@@ -274,6 +285,7 @@ size_sims_boot <- function(lfreq, cpue, samples = NULL, yrs = NULL, strata = NUL
   boot_res %>%
     map.(., ~ess_size(sim_data = .x, og_data = og_data)) %>%
     map_df.(., ~as.data.frame(.x), .id = "sim") -> boot_ess
+
 
   if(!is.null(save)){
     vroom::vroom_write(boot_ess, here::here("output", region, paste0("boot_", save, "_ess_sz.csv")), delim = ",")

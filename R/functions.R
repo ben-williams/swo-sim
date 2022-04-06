@@ -489,21 +489,13 @@ age_pop_est_boot <- function(lfreq, specimen, cpue, samples = 10000, yrs = NULL)
     filter.(year >= yrs) -> .cpue
 
   # bootstrap the hauls and then lengths
-  # setDT(.cpue) %>%
-  #   filter.(year >= yrs) %>%
-  #   group_by(year, species_code) %>%
-  #   distinct(hauljoin) %>%
-  #   as_tidytable(.) %>%
-  #   .[, hauljoin := hauljoin[sample.int(.N, .N, replace = TRUE)],
-  #     by = c('year', 'species_code')] -> hls
-
   setDT(.cpue) %>%
     filter.(year >= yrs) %>%
-    group_by(year) %>%
+    group_by(year, species_code) %>%
     distinct(hauljoin) %>%
     as_tidytable(.) %>%
     .[, hauljoin := hauljoin[sample.int(.N, .N, replace = TRUE)],
-      by = c('year')] -> hls
+      by = c('year', 'species_code')] -> hls
 
   setDT(hls) %>%
     left_join.(.cpue) -> .cpue

@@ -10,10 +10,12 @@ library(purrr)
 library(rsample)
 library(data.table)
 
+source("R/functions.R")
+
 # globals ----
 region = "AI"
-iters = 100
-boot = 10
+#iters = 100
+boot = 500
 
 # data ----
 
@@ -45,22 +47,75 @@ vroom::vroom(here::here("data", "specimen.csv")) %>%
   dplyr::filter(!is.na(age)) -> specimen
 
 
+
+
 ###############################################################################################################
 # Bootstrap & sub-sampling simulation function calls
-source("R/functions.R")
 
-rerun(1, size_pop_est(lfreq, cpue, samples = 10000, yrs = 2018)) %>%
+rerun(1, size_pop_est(lfreq, cpue, samples = 10000, yrs = 2014)) %>%
   map_df.(., ~as.data.frame(.x), .id = "sim")  -> og_size
-vroom::vroom_write(og_size, here::here("output", "bootstrap", region, "og_size.csv"), delim = ",")
+vroom::vroom_write(og_size, here::here("output", region, "og_size.csv"), delim = ",")
 
-base <- size_sims_boot(lfreq, cpue, samples = 10000, yrs = 2018, strata = NULL, og_data = og_size, boot = boot, write_comp = NULL, save = "base", region = tolower(region))
-s40 <- size_sims_boot(lfreq, cpue, samples = 40, yrs = 2018, strata = NULL, og_data = og_size, boot = boot, write_comp = NULL, save = "s40", region = tolower(region))
-s60 <- size_sims_boot(lfreq, cpue, samples = 60, yrs = 2018, strata = NULL, og_data = og_size, boot = boot, write_comp = NULL, save = "s60", region = tolower(region))
-s80 <- size_sims_boot(lfreq, cpue, samples = 80, yrs = 2018, strata = NULL, og_data = og_size, boot = boot, write_comp = NULL, save = "s80", region = tolower(region))
-s100 <- size_sims_boot(lfreq, cpue, samples = 100, yrs = 2018, strata = NULL, og_data = og_size, boot = boot, write_comp = NULL, save = "s100", region = tolower(region))
-s120 <- size_sims_boot(lfreq, cpue, samples = 120, yrs = 2018, strata = NULL, og_data = og_size, boot = boot, write_comp = NULL, save = "s120", region = tolower(region))
-s140 <- size_sims_boot(lfreq, cpue, samples = 140, yrs = 2018, strata = NULL, og_data = og_size, boot = boot, write_comp = NULL, save = "s140", region = tolower(region))
+rerun(1, age_pop_est(specimen, og_size, yrs = 2014, sim = NULL, save = NULL)) %>%
+  map_df.(., ~as.data.frame(.x), .id = "sim")  -> og_age
+vroom::vroom_write(og_age, here::here("output", region, "og_age.csv"), delim = ",")
 
+st <- Sys.time()
+base <- age_sims_boot(lfreq, specimen, cpue, samples = 10000, yrs = 2014, og_data_age = og_age, og_data_size = og_size, boot = boot, write_comp = NULL, save = "base", region = tolower(region))
+s40 <- age_sims_boot(lfreq, specimen, cpue, samples = 40, yrs = 2014, og_data_age = og_age, og_data_size = og_size, boot = boot, write_comp = NULL, save = "s40", region = tolower(region))
+s60 <- age_sims_boot(lfreq, specimen, cpue, samples = 60, yrs = 2014, og_data_age = og_age, og_data_size = og_size, boot = boot, write_comp = NULL, save = "s60", region = tolower(region))
+s80 <- age_sims_boot(lfreq, specimen, cpue, samples = 80, yrs = 2014, og_data_age = og_age, og_data_size = og_size, boot = boot, write_comp = NULL, save = "s80", region = tolower(region))
+s100 <- age_sims_boot(lfreq, specimen, cpue, samples = 100, yrs = 2014, og_data_age = og_age, og_data_size = og_size, boot = boot, write_comp = NULL, save = "s100", region = tolower(region))
+s120 <- age_sims_boot(lfreq, specimen, cpue, samples = 120, yrs = 2014, og_data_age = og_age, og_data_size = og_size, boot = boot, write_comp = NULL, save = "s120", region = tolower(region))
+s140 <- age_sims_boot(lfreq, specimen, cpue, samples = 140, yrs = 2014, og_data_age = og_age, og_data_size = og_size, boot = boot, write_comp = NULL, save = "s140", region = tolower(region))
+end <- Sys.time()
+
+run_time <- end-st
+
+# Run age & size bootstraps
+
+# lfreq %>%
+#   filter(species_code == 21740) -> lfreq_test
+#
+# cpue %>%
+#   filter(species_code == 21740) -> cpue_test
+#
+# specimen %>%
+#   filter(species_code == 21740) -> specimen_test
+#
+# rerun(1, size_pop_est(lfreq_test, cpue_test, samples = 10000, yrs = 2014)) %>%
+#   map_df.(., ~as.data.frame(.x), .id = "sim")  -> og_size
+# vroom::vroom_write(og_size, here::here("output", region, "og_size.csv"), delim = ",")
+#
+# rerun(1, age_pop_est(specimen_test, og_size, yrs = 2014, sim = NULL, save = NULL)) %>%
+#   map_df.(., ~as.data.frame(.x), .id = "sim")  -> og_age
+# vroom::vroom_write(og_age, here::here("output", region, "og_age.csv"), delim = ",")
+
+
+#st <- Sys.time()
+# base <- age_sims_boot(lfreq_test, specimen_test, cpue_test, samples = 10000, yrs = 2014, og_data_age = og_age, og_data_size = og_size, boot = boot, write_comp = TRUE, save = "base_test", region = tolower(region))
+# s40 <- age_sims_boot(lfreq_test, specimen_test, cpue_test, samples = 40, yrs = 2018, og_data_age = og_age, og_data_size = og_size, boot = boot, write_comp = TRUE, save = "s40", region = tolower(region))
+# s60 <- age_sims_boot(lfreq_test, specimen_test, cpue_test, samples = 60, yrs = 2012, og_data_age = og_age, og_data_size = og_size, boot = boot, write_comp = TRUE, save = "s60", region = tolower(region))
+# s80 <- age_sims_boot(lfreq_test, specimen_test, cpue_test, samples = 80, yrs = 2012, og_data_age = og_age, og_data_size = og_size, boot = boot, write_comp = TRUE, save = "s80", region = tolower(region))
+# s100 <- age_sims_boot(lfreq_test, specimen_test, cpue_test, samples = 100, yrs = 2012, og_data_age = og_age, og_data_size = og_size, boot = boot, write_comp = TRUE, save = "s100", region = tolower(region))
+# s120 <- age_sims_boot(lfreq_test, specimen_test, cpue_test, samples = 120, yrs = 2012, og_data_age = og_age, og_data_size = og_size, boot = boot, write_comp = TRUE, save = "s120", region = tolower(region))
+# s140 <- age_sims_boot(lfreq_test, specimen_test, cpue_test, samples = 140, yrs = 2012, og_data_age = og_age, og_data_size = og_size, boot = boot, write_comp = TRUE, save = "s140", region = tolower(region))
+# end <- Sys.time()
+#
+# run_time <- end-st
+
+
+
+# Run size bootstraps
+
+# base <- size_sims_boot(lfreq, cpue, samples = 10000, yrs = 2012, strata = NULL, og_data = og_size, boot = boot, write_comp = NULL, save = "base", region = tolower(region))
+# s40 <- size_sims_boot(lfreq, cpue, samples = 40, yrs = 2012, strata = NULL, og_data = og_size, boot = boot, write_comp = NULL, save = "s40", region = tolower(region))
+# s60 <- size_sims_boot(lfreq, cpue, samples = 60, yrs = 2012, strata = NULL, og_data = og_size, boot = boot, write_comp = NULL, save = "s60", region = tolower(region))
+# s80 <- size_sims_boot(lfreq, cpue, samples = 80, yrs = 2012, strata = NULL, og_data = og_size, boot = boot, write_comp = NULL, save = "s80", region = tolower(region))
+# s100 <- size_sims_boot(lfreq, cpue, samples = 100, yrs = 2012, strata = NULL, og_data = og_size, boot = boot, write_comp = NULL, save = "s100", region = tolower(region))
+# s120 <- size_sims_boot(lfreq, cpue, samples = 120, yrs = 2012, strata = NULL, og_data = og_size, boot = boot, write_comp = NULL, save = "s120", region = tolower(region))
+# s140 <- size_sims_boot(lfreq, cpue, samples = 140, yrs = 2012, strata = NULL, og_data = og_size, boot = boot, write_comp = NULL, save = "s140", region = tolower(region))
+#
 
 ###############################################################################################################
 # Sub-sampling function calls

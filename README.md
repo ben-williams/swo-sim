@@ -1,3 +1,6 @@
+# ARCHIVED
+I'm archiving this repo - functions have been repackaged and moved to https://github.com/BenWilliams-NOAA/swo
+
 ## SWO pseudocode 
 
 The `sims` function is the primary driver, it calls the `pop_est` function and replicates it a user defined number of iterations, it then processes the results out of list form and can save the results as a .csv. 
